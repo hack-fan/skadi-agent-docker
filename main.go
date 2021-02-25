@@ -27,8 +27,8 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(data)
-	fmt.Println(raw)
+	fmt.Println(string(data))
+	fmt.Println(string(raw))
 
 	time.Sleep(time.Minute)
 }
