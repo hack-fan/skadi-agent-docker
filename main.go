@@ -2,39 +2,78 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/hack-fan/skadigo"
 	"go.uber.org/zap"
 
 	"github.com/hack-fan/config"
+	"github.com/hack-fan/skadigo"
 )
 
 var cli *client.Client
 var log *zap.SugaredLogger
 var ctx = context.Background()
+var settings = new(Settings)
 
 type Settings struct {
 	Debug  bool `default:"false"`
 	Token  string
 	Server string `default:"https://api.letserver.run"`
-	// default service name to restart
+	// default service name to update
 	Default string
 }
 
+// up: update default service
+// up <service>: update the service
 func handler(msg string) (string, error) {
-	resp, _, err := cli.ServiceInspectWithRaw(ctx, "server_api", types.ServiceInspectOptions{})
-	if err != nil {
-		panic(err)
+	// default error
+	e := fmt.Errorf("unsupported command: %s", msg)
+	// parse command
+	switch {
+	// update
+	case strings.HasPrefix(msg, "up"):
+		args := strings.Split(msg, " ")
+		service := settings.Default
+		if len(args) == 1 {
+			if settings.Default == "" {
+				return "", errors.New("default service is not defined")
+			}
+		} else if len(args) == 2 {
+			service = strings.TrimSpace(args[1])
+		} else {
+			return "", e
+		}
+		err := update(service)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("update service [%s] successful", service), nil
+	// other
+	default:
+		return "", e
 	}
-	return resp.Spec.Name, nil
+}
+
+// update docker service
+func update(service string) error {
+	resp, _, err := cli.ServiceInspectWithRaw(ctx, service, types.ServiceInspectOptions{})
+	if err != nil {
+		return fmt.Errorf("check service [%s] failed: %w", service, err)
+	}
+	_, err = cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("update service [%s] failed: %w", service, err)
+	}
+	return nil
 }
 
 func main() {
 	var err error
 	// load config
-	var settings = new(Settings)
 	config.MustLoad(settings)
 
 	// logger
