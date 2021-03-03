@@ -30,6 +30,7 @@ type Settings struct {
 // up: update default service
 // up <service>: update the service
 func handler(msg string) (string, error) {
+	log.Infof("job received: %s", msg)
 	// default error
 	e := fmt.Errorf("unsupported command: %s", msg)
 	// parse command
@@ -40,20 +41,25 @@ func handler(msg string) (string, error) {
 		service := settings.Default
 		if len(args) == 1 {
 			if settings.Default == "" {
+				log.Error("missing default setting")
 				return "", errors.New("default service is not defined")
 			}
 		} else if len(args) == 2 {
 			service = strings.TrimSpace(args[1])
 		} else {
+			log.Error(e)
 			return "", e
 		}
 		err := update(service)
 		if err != nil {
+			log.Error(e)
 			return "", err
 		}
+		log.Infof("succeeded: %s", msg)
 		return fmt.Sprintf("update service [%s] successful", service), nil
 	// other
 	default:
+		log.Error(e)
 		return "", e
 	}
 }
