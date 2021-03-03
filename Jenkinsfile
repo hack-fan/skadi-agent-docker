@@ -17,7 +17,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry("https://${env.CODING_DOCKER_REG_HOST}", "${env.CODING_ARTIFACTS_CREDENTIALS_ID}") {
-                        def img = docker.build("${env.DOCKER_IMAGE_NAME}:latest","-f ./cmd/api/Dockerfile .")
+                        def img = docker.build("${env.DOCKER_IMAGE_NAME}:latest")
                         img.push()
                     }
                 }
