@@ -9,17 +9,6 @@ pipeline {
     stages {
         stage('检出') {
             steps {
-                sh """
-                    curl '${env.E_WECHAT_ROBOT_WEBHOOK_URL}' \
-                         -H 'Content-Type: application/json' \
-                         -d '
-                         {
-                              "msgtype": "markdown",
-                              "markdown": {
-                                  "content": "[${env.JOB_NAME}:${CI_BUILD_NUMBER}] <font color=\u0027comment\u0027>开始构建</font>"
-                              }
-                         }'
-                """
                 checkout([$class: 'GitSCM', branches: [[name: env.GIT_BUILD_REF]],
                 userRemoteConfigs: [[url: env.GIT_REPO_URL, credentialsId: env.CREDENTIALS_ID]]])
             }
@@ -33,34 +22,6 @@ pipeline {
                     }
                 }
             }
-        }
-    }
-    post {
-        success {
-            sh """
-                curl '${env.WEWORK_WEBHOOK}' \
-                     -H 'Content-Type: application/json' \
-                     -d '
-                     {
-                          "msgtype": "markdown",
-                          "markdown": {
-                              "content": "[${env.JOB_NAME}:${CI_BUILD_NUMBER}] <font color=\u0027info\u0027>构建成功</font>"
-                          }
-                     }'
-            """
-        }
-        failure {
-            sh """
-                curl '${env.WEWORK_WEBHOOK}' \
-                     -H 'Content-Type: application/json' \
-                     -d '
-                     {
-                          "msgtype": "markdown",
-                          "markdown": {
-                              "content": "[${env.JOB_NAME}:${CI_BUILD_NUMBER}] <font color=\u0027warning\u0027>构建失败</font>"
-                          }
-                     }'
-            """
         }
     }
 }
