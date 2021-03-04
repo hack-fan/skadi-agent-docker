@@ -50,10 +50,14 @@ func handler(msg string) (string, error) {
 			log.Error(e)
 			return "", e
 		}
-		err := update(service)
+		warning, err := update(service)
 		if err != nil {
 			log.Error(e)
 			return "", err
+		}
+		if warning != "" {
+			log.Warnf("service [%s] update warning:\n%s", service, warning)
+			return fmt.Sprintf("update service [%s] successful with warnings:\n%s", service, warning), nil
 		}
 		log.Infof("succeeded: %s", msg)
 		return fmt.Sprintf("update service [%s] successful", service), nil
@@ -65,16 +69,20 @@ func handler(msg string) (string, error) {
 }
 
 // update docker service
-func update(service string) error {
+func update(service string) (string, error) {
 	resp, _, err := cli.ServiceInspectWithRaw(ctx, service, types.ServiceInspectOptions{})
 	if err != nil {
-		return fmt.Errorf("check service [%s] failed: %w", service, err)
+		return "", fmt.Errorf("check service [%s] failed: %w", service, err)
 	}
-	_, err = cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
+	res, err := cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("update service [%s] failed: %w", service, err)
+		return "", fmt.Errorf("update service [%s] failed: %w", service, err)
 	}
-	return nil
+	if len(res.Warnings) > 0 {
+		warning := strings.Join(res.Warnings, "\n")
+		return warning, nil
+	}
+	return "", nil
 }
 
 func main() {
