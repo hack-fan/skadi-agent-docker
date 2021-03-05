@@ -74,6 +74,7 @@ func update(service string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("check service [%s] failed: %w", service, err)
 	}
+	log.Infof("service: %+v", resp)
 	res, err := cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
 	if err != nil {
 		return "", fmt.Errorf("update service [%s] failed: %w", service, err)
