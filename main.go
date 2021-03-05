@@ -75,6 +75,13 @@ func update(service string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("check service [%s] failed: %w", service, err)
 	}
+	image := resp.Spec.TaskTemplate.ContainerSpec.Image
+	log.Debug(image)
+	i := strings.Index(image, "@")
+	if i > 0 {
+		resp.Spec.TaskTemplate.ContainerSpec.Image = image[0:i]
+		log.Debug(resp.Spec.TaskTemplate.ContainerSpec.Image)
+	}
 	respLog, _ := json.MarshalIndent(resp, "", "    ")
 	log.Debugf("service: %s", string(respLog))
 	res, err := cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
