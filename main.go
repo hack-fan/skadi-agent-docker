@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -74,7 +75,8 @@ func update(service string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("check service [%s] failed: %w", service, err)
 	}
-	log.Infof("service: %+v", resp)
+	respLog, _ := json.MarshalIndent(resp, "", "    ")
+	log.Debugf("service: %s", string(respLog))
 	res, err := cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
 	if err != nil {
 		return "", fmt.Errorf("update service [%s] failed: %w", service, err)
