@@ -121,7 +121,9 @@ func main() {
 	}
 
 	// skadi agent
-	agent := skadigo.New(settings.Token, settings.Server, handler, nil)
+	agent := skadigo.New(settings.Token, settings.Server, handler, &skadigo.Options{
+		Logger: log,
+	})
 	log.Info("Skadi agent start")
 	agent.Start()
 }
