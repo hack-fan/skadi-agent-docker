@@ -84,6 +84,7 @@ func update(service string) (string, error) {
 	}
 	respLog, _ := json.MarshalIndent(resp, "", "    ")
 	log.Debugf("service: %s", string(respLog))
+	resp.Spec.TaskTemplate.ForceUpdate = 1
 	res, err := cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
 	if err != nil {
 		return "", fmt.Errorf("update service [%s] failed: %w", service, err)
