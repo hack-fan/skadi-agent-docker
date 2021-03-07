@@ -75,16 +75,17 @@ func update(service string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("check service [%s] failed: %w", service, err)
 	}
+	// if you start service from cli, the image will be locked to a version, change it to tag only
 	image := resp.Spec.TaskTemplate.ContainerSpec.Image
-	log.Debug(image)
 	i := strings.Index(image, "@")
 	if i > 0 {
 		resp.Spec.TaskTemplate.ContainerSpec.Image = image[0:i]
-		log.Debug(resp.Spec.TaskTemplate.ContainerSpec.Image)
 	}
 	respLog, _ := json.MarshalIndent(resp, "", "    ")
 	log.Debugf("service: %s", string(respLog))
+	// this field must greater than prev state to take effect
 	resp.Spec.TaskTemplate.ForceUpdate += 1
+	// then force update
 	res, err := cli.ServiceUpdate(ctx, service, resp.Version, resp.Spec, types.ServiceUpdateOptions{})
 	if err != nil {
 		return "", fmt.Errorf("update service [%s] failed: %w", service, err)
