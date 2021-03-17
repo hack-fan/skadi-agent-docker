@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -121,10 +124,23 @@ func main() {
 		panic(err)
 	}
 
+	// context
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// system signals - for graceful shutdown or restart
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigs
+		log.Infof("%s signal received, send cancel to worker context.", sig)
+		cancel()
+	}()
+
 	// skadi agent
-	agent := skadigo.New(settings.Token, settings.Server, handler, &skadigo.Options{
+	agent := skadigo.New(settings.Token, settings.Server, &skadigo.Options{
 		Logger: log,
 	})
 	log.Info("Skadi agent start")
-	agent.Start()
+	agent.StartWorker(ctx, handler, 0)
+	log.Info("this worker have been safety stopped.")
 }
